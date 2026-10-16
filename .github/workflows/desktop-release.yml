@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    runs-on: [self-hosted, Windows, dartnode-windows]
     permissions:
       contents: read
     env:
@@ -85,6 +85,7 @@ jobs:
             dist/release-assets/*.zip
           if-no-files-found: error
 
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
   build-macos:
     strategy:
       fail-fast: false
@@ -94,7 +95,7 @@ jobs:
             runner: macos-15-intel
           - arch: arm64
             runner: macos-15
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ startsWith((matrix.runner), 'windows') && fromJSON('["self-hosted","Windows","dartnode-windows"]') || startsWith((matrix.runner), 'macos') && fromJSON('["self-hosted","macOS","dartnode-macos"]') || fromJSON('["self-hosted","Linux","X64","dartnode-linux","dartnode-build"]') }}
     permissions:
       contents: read
     env:
@@ -161,8 +162,9 @@ jobs:
           path: dist/release-assets/*.dmg
           if-no-files-found: error
 
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
   publish-release:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
     needs: [build-windows, build-macos]
     permissions:
       contents: write
@@ -202,3 +204,4 @@ jobs:
           generate_release_notes: true
           files: dist/release-assets/*
           fail_on_unmatched_files: true
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}

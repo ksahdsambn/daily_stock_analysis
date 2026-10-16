@@ -11,7 +11,7 @@ concurrency:
 jobs:
   changes:
     name: 🔎 Change Detection
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
@@ -25,9 +25,10 @@ jobs:
             frontend:
               - 'apps/dsa-web/**'
 
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
   backend-gate:
     name: backend-gate
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -44,9 +45,10 @@ jobs:
       - name: ✅ Run backend gate
         run: ./scripts/ci_gate.sh
 
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
   docker-build:
     name: docker-build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
     needs: [backend-gate]
     steps:
       - name: 📥 Checkout
@@ -69,11 +71,12 @@ jobs:
           print('✅ All Docker imports OK')
           "
 
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
   web-gate:
     name: web-gate
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
     needs: [changes]
-    if: needs.changes.outputs.frontend == 'true'
+    if: ${{ (needs.changes.outputs.frontend == 'true') && ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
     defaults:
       run:
         working-directory: apps/dsa-web
